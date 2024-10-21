@@ -1,2 +1,0 @@
-# relaxio
-ARIA Hackathon
