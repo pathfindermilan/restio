@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 	"regexp"
+	"strings"
 
 	"backend/internal/models"
 	"backend/internal/services"
@@ -113,7 +114,15 @@ func (ctrl *AuthController) DeleteUser(c *gin.Context) {
 }
 
 func (ctrl *AuthController) Logout(c *gin.Context) {
-	if err := ctrl.authService.Logout(); err != nil {
+	authHeader := c.GetHeader("Authorization")
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Authorization header format"})
+		return
+	}
+	token := parts[1]
+
+	if err := ctrl.authService.Logout(token); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to logout"})
 		return
 	}

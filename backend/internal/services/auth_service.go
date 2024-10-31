@@ -25,7 +25,7 @@ type AuthService interface {
 	DeleteUser(userID uint) error
 	UpdateUser(userID uint, updatedData *models.User) error
 	GetProfile(userID uint) (*models.User, error)
-	Logout() error
+	Logout(token string) error
 }
 
 type authService struct {
@@ -128,8 +128,6 @@ func (s *authService) DeleteUser(userID uint) error {
 		return err
 	}
 
-	// JWT invalidation logic goes here if needed
-
 	return nil
 }
 
@@ -153,7 +151,7 @@ func (s *authService) GetProfile(userID uint) (*models.User, error) {
 	return user, nil
 }
 
-func (s *authService) Logout() error {
-	// JWT invalidation logic goes here if needed
+func (s *authService) Logout(token string) error {
+	s.jwtService.InvalidateToken(token)
 	return nil
 }

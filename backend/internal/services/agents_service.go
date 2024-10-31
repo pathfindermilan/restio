@@ -5,7 +5,6 @@ type AIService interface {
 }
 
 type aiService struct {
-	// Add dependencies like AI models or external APIs
 }
 
 func NewAIService() AIService {
@@ -13,7 +12,5 @@ func NewAIService() AIService {
 }
 
 func (s *aiService) ProcessData(input string) (string, error) {
-	// Implement your AI processing logic here
-	// For example, call an external AI API or use a local model
 	return "Processed: " + input, nil
 }
