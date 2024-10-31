@@ -28,7 +28,6 @@ func AuthMiddleware(jwtService JWTService) gin.HandlerFunc {
 
 		tokenString := parts[1]
 
-		// Validate the token using JWTService
 		token, err := jwtService.ValidateToken(tokenString)
 		if err != nil {
 			log.Println("Token validation error:", err)
@@ -37,7 +36,6 @@ func AuthMiddleware(jwtService JWTService) gin.HandlerFunc {
 			return
 		}
 
-		// Extract claims from the token
 		if claims, ok := token.Claims.(*jwtCustomClaim); ok && token.Valid {
 			log.Printf("Middleware: User ID extracted: %v\n", claims.UserID)
 			c.Set("userID", claims.UserID)

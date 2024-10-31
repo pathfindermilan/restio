@@ -31,12 +31,11 @@ func SendVerificationEmail(user *models.User, smtpHost, smtpPort, smtpUser, smtp
 
 	auth := smtp.PlainAuth("", smtpUser, smtpPassword, smtpHost)
 
-	// Retry logic with a maximum number of attempts
 	for attempts := 0; attempts < 3; attempts++ {
 		err := smtp.SendMail(smtpHost+":"+smtpPort, auth, smtpUser, []string{to}, msg)
 		if err != nil {
 			log.Printf("Attempt %d - Error sending email: %s\n", attempts+1, err)
-			time.Sleep(2 * time.Second) // wait for a short duration before retrying
+			time.Sleep(2 * time.Second)
 		} else {
 			log.Printf("Verification email sent to %s\n", to)
 			return nil
