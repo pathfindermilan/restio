@@ -9,6 +9,8 @@ import (
 type UserRepository interface {
 	CreateUser(user *models.User) error
 	GetUserByEmail(email string) (*models.User, error)
+	GetUserByUsername(username string) (*models.User, error)
+	UpdateUser(user *models.User) error
 }
 
 type userRepository struct {
@@ -27,4 +29,14 @@ func (r *userRepository) GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	err := r.db.Where("email = ?", email).First(&user).Error
 	return &user, err
+}
+
+func (r *userRepository) GetUserByUsername(username string) (*models.User, error) {
+	var user models.User
+	err := r.db.Where("username = ?", username).First(&user).Error
+	return &user, err
+}
+
+func (r *userRepository) UpdateUser(user *models.User) error {
+	return r.db.Save(user).Error
 }
