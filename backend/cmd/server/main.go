@@ -1,10 +1,9 @@
 package main
 
 import (
-	"backend/internal/models"
-
 	"backend/internal/auth"
 	"backend/internal/config"
+	"backend/internal/models"
 	"backend/internal/repositories"
 	"backend/internal/routes"
 	"backend/internal/services"
@@ -35,6 +34,8 @@ func main() {
 	db.AutoMigrate(&models.User{})
 
 	userRepo := repositories.NewUserRepository(db)
+
+	// Create JWT service without Redis
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
 	authService := services.NewAuthService(userRepo, jwtService)
 

@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -17,11 +18,13 @@ type jwtCustomClaim struct {
 }
 
 type jwtService struct {
-	secret string
+	secretKey string
 }
 
 func NewJWTService(secret string) JWTService {
-	return &jwtService{secret}
+	return &jwtService{
+		secretKey: secret,
+	}
 }
 
 func (j *jwtService) GenerateToken(userID uint) (string, error) {
@@ -32,11 +35,20 @@ func (j *jwtService) GenerateToken(userID uint) (string, error) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(j.secret))
+	return token.SignedString([]byte(j.secretKey))
 }
 
 func (j *jwtService) ValidateToken(tokenString string) (*jwt.Token, error) {
-	return jwt.ParseWithClaims(tokenString, &jwtCustomClaim{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(j.secret), nil
+	token, err := jwt.ParseWithClaims(tokenString, &jwtCustomClaim{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(j.secretKey), nil
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*jwtCustomClaim); !ok || !token.Valid || claims.ExpiresAt < time.Now().Unix() {
+		return nil, errors.New("invalid or expired token")
+	}
+
+	return token, nil
 }
