@@ -18,14 +18,11 @@ type AuthController struct {
 func NewAuthController(authService services.AuthService) *AuthController {
 	v := validator.New()
 
-	// Register custom password validation
 	v.RegisterValidation("password", func(fl validator.FieldLevel) bool {
 		password := fl.Field().String()
 		if len(password) < 8 {
 			return false
 		}
-
-		// Check for at least one special character
 		re := regexp.MustCompile(`[!@#$%^&*(),.?":{}|<>]`)
 		return re.MatchString(password)
 	})
@@ -40,9 +37,7 @@ func (ctrl *AuthController) Register(c *gin.Context) {
 		return
 	}
 
-	// Validate the user struct using the validator
 	if err := ctrl.Validate.Struct(user); err != nil {
-		// Return detailed validation errors
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -52,13 +47,14 @@ func (ctrl *AuthController) Register(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusCreated, gin.H{"message": "registration successful"})
 }
 
 func (ctrl *AuthController) Login(c *gin.Context) {
 	var creds struct {
-		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required"`
+		Identifier string `json:"identifier" binding:"required"` // Accept both email and username.
+		Password   string `json:"password" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&creds); err != nil {
@@ -66,11 +62,35 @@ func (ctrl *AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := ctrl.authService.Login(creds.Email, creds.Password)
+	token, err := ctrl.authService.Login(creds.Identifier, creds.Password)
 	if err != nil {
+		if err.Error() == "email not verified" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Please verify your email before logging in."})
+			return
+		}
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+func (ctrl *AuthController) VerifyEmail(c *gin.Context) {
+	var input struct {
+		Username         string `json:"username" binding:"required"`
+		VerificationCode string `json:"verification_code" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := ctrl.authService.VerifyEmail(input.Username, input.VerificationCode)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Email verified successfully"})
 }

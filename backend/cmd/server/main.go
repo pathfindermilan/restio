@@ -37,11 +37,10 @@ func main() {
 	userRepo := repositories.NewUserRepository(db)
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
 	authService := services.NewAuthService(userRepo, jwtService)
-	aiService := services.NewAIService()
 
 	router := gin.Default()
 
-	routes.SetupRoutes(router, authService, aiService, jwtService)
+	routes.SetupRoutes(router, authService, jwtService)
 
 	log.Printf("Server running on port %s", cfg.Port)
 	if err := router.Run(":" + cfg.Port); err != nil {
