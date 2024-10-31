@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"log"
 	"net/http"
 	"strings"
 
@@ -11,6 +12,7 @@ func AuthMiddleware(jwtService JWTService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
+			log.Println("Missing Authorization header")
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
 			c.Abort()
 			return
@@ -18,21 +20,33 @@ func AuthMiddleware(jwtService JWTService) gin.HandlerFunc {
 
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
+			log.Println("Malformed Authorization header")
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header format must be Bearer {token}"})
 			c.Abort()
 			return
 		}
 
 		tokenString := parts[1]
+
+		// Validate the token using JWTService
 		token, err := jwtService.ValidateToken(tokenString)
-		if err != nil || !token.Valid {
+		if err != nil {
+			log.Println("Token validation error:", err)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort()
 			return
 		}
 
-		claims := token.Claims.(*jwtCustomClaim)
-		c.Set("userID", claims.UserID)
+		// Extract claims from the token
+		if claims, ok := token.Claims.(*jwtCustomClaim); ok && token.Valid {
+			log.Printf("Middleware: User ID extracted: %v\n", claims.UserID)
+			c.Set("userID", claims.UserID)
+		} else {
+			log.Println("Invalid token claims")
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			c.Abort()
+			return
+		}
 
 		c.Next()
 	}
