@@ -15,7 +15,7 @@ export async function POST(request) {
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `JWT ${token}`,
+          Authorization: `Bearer ${token}`,
           "User-Agent": "insomnia/9.3.2",
         },
       }

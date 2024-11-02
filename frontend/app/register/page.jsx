@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 
 import { useAuth } from "@/utils/auth";
-import { Header } from "@/app/components/HeaderFooter/HeadFooter";
 
 export default function Register() {
   const auth = useAuth();

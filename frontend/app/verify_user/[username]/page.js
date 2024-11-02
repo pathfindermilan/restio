@@ -8,7 +8,7 @@ import axios from "axios";
 
 export default function Activate({ params }) {
   const auth = useAuth();
-  const { uid, token } = params;
+  const { username, verification_code } = params;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,9 +17,9 @@ export default function Activate({ params }) {
   console.log("params:  ", params);
 
   useEffect(() => {
-    if (uid && token) {
+    if (username && verification_code) {
       try {
-        axios.post("/api/activate", { uid, token }).then((res) => {
+        axios.post("/api/activate", { username, verification_code }).then((res) => {
           setData(res.data);
         });
       } catch (error) {

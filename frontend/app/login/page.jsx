@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from "@/utils/auth";
-import { Footer, Header } from "@/app/components/HeaderFooter/HeadFooter";
 
 export default function Login() {
   const auth = useAuth();

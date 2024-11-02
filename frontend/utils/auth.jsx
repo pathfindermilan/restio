@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
   const router = useRouter();
 
   async function loadUserFromToken() {
-    const token = localStorage.getItem("access");
+    const token = localStorage.getItem("token");
     if (token) {
       try {
         const response = await fetch("/api/auth/me/", {
@@ -32,8 +32,7 @@ export const AuthProvider = ({ children }) => {
           dispatch(setEmail(userData.email));
           console.log(userData);
         } else {
-          localStorage.removeItem("access");
-          localStorage.removeItem("refresh");
+          localStorage.removeItem("token");
         }
       } catch (error) {
         console.error("Failed to load user", error);
@@ -53,12 +52,10 @@ export const AuthProvider = ({ children }) => {
       headers,
     });
     if (response.ok) {
-      const { refresh, access } = await response.json();
+      const { token } = await response.json();
 
-      if (refresh && access) {
-        localStorage.setItem("refresh", refresh);
-        localStorage.setItem("access", access);
-
+      if (token) {
+        localStorage.setItem("token", token);
         await loadUserFromToken();
         router.push("/");
       }
@@ -80,8 +77,7 @@ export const AuthProvider = ({ children }) => {
       console.log(data);
     }
 
-    localStorage.removeItem("access");
-    localStorage.removeItem("refresh");
+    localStorage.removeItem("token");
     setUser(null);
     router.push("/login");
   };
@@ -94,16 +90,18 @@ export const AuthProvider = ({ children }) => {
     password,
     re_password,
   }) => {
+    console.log( first_name,
+      username,
+      email,
+      password,'sending')
     const response = await fetch("/api/auth/register", {
       headers,
       method: "POST",
       body: JSON.stringify({
         first_name,
-        last_name,
         username,
         email,
         password,
-        re_password,
       }),
     });
     if (response.ok) {

@@ -1,4 +1,3 @@
-// api/activate/route.js
 
 const { NextResponse } = require("next/server");
 const axios = require("axios").default;

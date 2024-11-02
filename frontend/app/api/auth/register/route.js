@@ -2,15 +2,13 @@ import { NextResponse } from "next/server";
 
 export async function POST(request) {
   const body = await request.json();
-  const { first_name, last_name, username, email, password, re_password } = body;
-
+  const { first_name,username, email, password} = body;
+ console.log(first_name, username, email, password)
   if (
     !first_name ||
-    !last_name ||
     !username ||
     !email ||
-    !password ||
-    !re_password
+    !password
   ) {
     return NextResponse.json(
       { error: "Missing required values" },

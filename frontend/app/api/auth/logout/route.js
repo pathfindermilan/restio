@@ -19,7 +19,7 @@ export async function POST(request) {
         headers: {
           "Content-Type": "application/json",
           "User-Agent": "insomnia/9.3.2",
-          Authorization: `JWT ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       }
     );
