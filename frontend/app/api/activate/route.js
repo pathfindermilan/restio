@@ -4,8 +4,8 @@ const axios = require("axios").default;
 
 export async function POST(request) {
   const { username, verification_code } = await request.json();
-
-  if (!uid || !token) {
+console.log(verification_code,username,'done')
+  if (!verification_code || !username) {
     return NextResponse.json(
       { error: "Missing required parameters" },
       { status: 400 }

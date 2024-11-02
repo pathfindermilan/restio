@@ -1,13 +1,13 @@
 "use client";
+
 import { useState } from "react";
 import Link from "next/link";
-import { Eye, EyeOff } from "lucide-react";
-
+import { motion } from "framer-motion";
+import { Eye, EyeOff, User, Mail, Lock, ArrowRight, UserCircle } from "lucide-react";
 import { useAuth } from "@/utils/auth";
 
 export default function Register() {
   const auth = useAuth();
-
   const [formState, setFormState] = useState({
     email: "",
     username: "",
@@ -22,7 +22,6 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       await auth.register(formState);
     } catch (error) {
@@ -30,246 +29,202 @@ export default function Register() {
     }
   };
 
-  const togglePasswordVisibility = (field) => {
-    if (field === 'password') {
-      setShowPassword(!showPassword);
-    } else if (field === 're_password') {
-      setShowConfirmPassword(!showConfirmPassword);
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: { duration: 0.5 }
     }
   };
 
   return (
-    <>
-      <div
-        className="min-h-screen bg-cover bg-center bg-fixed "
-        style={{ backgroundImage: 'url("/4.webp")' }}
+    <div 
+      className="min-h-screen bg-cover bg-center bg-fixed flex items-center justify-center p-4"
+      style={{ backgroundImage: 'url("/4.webp")' }}
+    >
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="w-full max-w-md bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl"
       >
-        <div className="absolute inset-0  bg-opacity-60"></div>
-        <div className="bg-black/60 ">
-        {/* <Header/> */}
-        </div>
-     
+        <motion.div
+          variants={itemVariants}
+          className="text-center"
+        >
+          <h2 className="text-3xl font-bold text-white mb-2">Create Account</h2>
+          <p className="text-indigo-200 mb-8">Join us today</p>
+        </motion.div>
 
-        <div className="relative z-10 container mx-auto px-4 py-2">
-          <div className="max-w-2xl mx-auto">
-            <div className="flex flex-col">
-              <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-                <h2 className="mt-2 text-center text-xl font-bold leading-9 tracking-tight text-white">
-                  Register your account
-                </h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <motion.div variants={itemVariants}>
+              <label className="block text-sm font-medium text-indigo-200 mb-2">
+                First Name
+              </label>
+              <div className="relative">
+                <UserCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-300 h-5 w-5" />
+                <input
+                  type="text"
+                  required
+                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-indigo-300/20 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent text-white placeholder-indigo-300"
+                  placeholder="First name"
+                  value={formState.first_name}
+                  onChange={(e) => setFormState(state => ({ ...state, first_name: e.target.value }))}
+                />
               </div>
+            </motion.div>
 
-              <div className="mt-4 sm:mx-auto sm:w-full sm:max-w-sm">
-                <form
-                  onSubmit={handleSubmit}
-                  method="POST"
-                  className="space-y-6"
-                >
-                 <div>
-                    <label
-                      htmlFor="first_name"
-                      className="block text-sm font-medium leading-6 text-white"
-                    >
-                      First Name
-                    </label>
-                    <div className="mt-1">
-                      <input
-                        id="first_name"
-                        name="first_name"
-                        type="text"
-                        required
-                        className="block w-full rounded-md border-0 bg-white/5 py-1.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
-                        value={formState.first_name}
-                        onChange={(e) =>
-                          setFormState((state) => ({
-                            ...state,
-                            first_name: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="last_name"
-                      className="block text-sm font-medium leading-6 text-white"
-                    >
-                      Last Name
-                    </label>
-                    <div className="mt-1">
-                      <input
-                        id="last_name"
-                        name="last_name"
-                        type="text"
-                        required
-                        className="block w-full rounded-md border-0 bg-white/5 py-1.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
-                        value={formState.last_name}
-                        onChange={(e) =>
-                          setFormState((state) => ({
-                            ...state,
-                            last_name: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="username"
-                      className="block text-sm font-medium leading-6 text-white"
-                    >
-                      Username
-                    </label>
-                    <div className="mt-1">
-                      <input
-                        id="username"
-                        name="username"
-                        type="text"
-                        required
-                        className="block w-full rounded-md border-0 bg-white/5 py-1.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
-                        value={formState.username}
-                        onChange={(e) =>
-                          setFormState((state) => ({
-                            ...state,
-                            username: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="block text-sm font-medium leading-6 text-white"
-                    >
-                      Email address
-                    </label>
-                    <div className="mt-1">
-                      <input
-                        id="email"
-                        name="email"
-                        type="email"
-                        required
-                        autoComplete="email"
-                        className="block w-full rounded-md border-0 bg-white/5 py-1.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
-                        value={formState.email}
-                        onChange={(e) =>
-                          setFormState((state) => ({
-                            ...state,
-                            email: e.target.value,
-                          }))
-                        }
-                      />
-                      
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <label
-                        htmlFor="password"
-                        className="block text-sm font-medium leading-6 text-white"
-                      >
-                        Password
-                      </label>
-                    </div>
-                    <div className="mt-1 relative">
-                      <input
-                        id="password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        required
-                        autoComplete="new-password"
-                        className="block w-full rounded-md border-0 bg-white/5 py-1.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6 pr-10"
-                        value={formState.password}
-                        onChange={(e) =>
-                          setFormState((state) => ({
-                            ...state,
-                            password: e.target.value,
-                          }))
-                        }
-                      />
-                      <button
-                        type="button"
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                        onClick={() => togglePasswordVisibility('password')}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-5 w-5 text-black" />
-                        ) : (
-                          <Eye className="h-5 w-5 text-black" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <label
-                        htmlFor="re_password"
-                        className="block text-sm font-medium leading-6 text-white"
-                      >
-                        Confirm Password
-                      </label>
-                    </div>
-                    <div className="mt-1 relative">
-                      <input
-                        id="re_password"
-                        name="re_password"
-                        type={showConfirmPassword ? "text" : "password"}
-                        required
-                        autoComplete="new-password"
-                        className="block w-full rounded-md border-0 bg-white/5 py-1.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6 pr-10"
-                        value={formState.re_password}
-                        onChange={(e) =>
-                          setFormState((state) => ({
-                            ...state,
-                            re_password: e.target.value,
-                          }))
-                        }
-                      />
-                      <button
-                        type="button"
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                        onClick={() => togglePasswordVisibility('re_password')}
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="h-5 w-5 text-black" />
-                        ) : (
-                          <Eye className="h-5 w-5 text-black" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <button
-                      type="submit"
-                      className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-                    >
-                      Register
-                    </button>
-                  </div>
-                </form>
-
-                <p className="mt-2 text-center text-sm text-gray-400">
-                  Already registered?{" "}
-                  <Link
-                    href="/login"
-                    className="font-semibold leading-6 text-black hover:text-indigo-300"
-                  >
-                    Login here
-                  </Link>
-                </p>
+            <motion.div variants={itemVariants}>
+              <label className="block text-sm font-medium text-indigo-200 mb-2">
+                Last Name
+              </label>
+              <div className="relative">
+                <UserCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-300 h-5 w-5" />
+                <input
+                  type="text"
+                  required
+                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-indigo-300/20 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent text-white placeholder-indigo-300"
+                  placeholder="Last name"
+                  value={formState.last_name}
+                  onChange={(e) => setFormState(state => ({ ...state, last_name: e.target.value }))}
+                />
               </div>
-            </div>
+            </motion.div>
           </div>
-        </div>
 
-      </div>
-    </>
+          <motion.div variants={itemVariants}>
+            <label className="block text-sm font-medium text-indigo-200 mb-2">
+              Username
+            </label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-300 h-5 w-5" />
+              <input
+                type="text"
+                required
+                className="w-full pl-10 pr-4 py-3 bg-white/5 border border-indigo-300/20 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent text-white placeholder-indigo-300"
+                placeholder="Choose a username"
+                value={formState.username}
+                onChange={(e) => setFormState(state => ({ ...state, username: e.target.value }))}
+              />
+            </div>
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
+            <label className="block text-sm font-medium text-indigo-200 mb-2">
+              Email
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-300 h-5 w-5" />
+              <input
+                type="email"
+                required
+                className="w-full pl-10 pr-4 py-3 bg-white/5 border border-indigo-300/20 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent text-white placeholder-indigo-300"
+                placeholder="Your email address"
+                value={formState.email}
+                onChange={(e) => setFormState(state => ({ ...state, email: e.target.value }))}
+              />
+            </div>
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
+            <label className="block text-sm font-medium text-indigo-200 mb-2">
+              Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-300 h-5 w-5" />
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                className="w-full pl-10 pr-12 py-3 bg-white/5 border border-indigo-300/20 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent text-white placeholder-indigo-300"
+                placeholder="Create a password"
+                value={formState.password}
+                onChange={(e) => setFormState(state => ({ ...state, password: e.target.value }))}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-indigo-300 hover:text-indigo-200"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
+            <label className="block text-sm font-medium text-indigo-200 mb-2">
+              Confirm Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-300 h-5 w-5" />
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                required
+                className="w-full pl-10 pr-12 py-3 bg-white/5 border border-indigo-300/20 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent text-white placeholder-indigo-300"
+                placeholder="Confirm your password"
+                value={formState.re_password}
+                onChange={(e) => setFormState(state => ({ ...state, re_password: e.target.value }))}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-indigo-300 hover:text-indigo-200"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+          </motion.div>
+
+          <motion.div
+            variants={itemVariants}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="mt-6"
+          >
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 hover:from-indigo-600 hover:to-purple-600 transition-all duration-300 shadow-lg hover:shadow-xl"
+            >
+              Create Account
+              <ArrowRight className="h-5 w-5" />
+            </button>
+          </motion.div>
+        </form>
+
+        <motion.p
+          variants={itemVariants}
+          className="mt-8 text-center text-indigo-200"
+        >
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors duration-200"
+          >
+            Sign in
+          </Link>
+        </motion.p>
+      </motion.div>
+    </div>
   );
 }
