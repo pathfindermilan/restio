@@ -12,9 +12,8 @@ const ModSyncForm = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
-  
   const audioRef = useRef(null);
-  
+
   const options = [
     { id: 'speech', label: 'Speech', icon: <Music className="w-5 h-5" /> },
     { id: 'exercise', label: 'Exercise', icon: <Dumbbell className="w-5 h-5" /> },
