@@ -1,0 +1,13 @@
+[project]
+name = "ai"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "jupyterlab>=4.3.0",
+    "langchain-openai>=0.2.5",
+    "openai>=1.53.0",
+    "python-dotenv>=1.0.1",
+    "requests>=2.32.3",
+]
