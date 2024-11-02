@@ -42,7 +42,7 @@ func main() {
 
 	router := gin.Default()
 
-	router.Static("/uploads", "./uploads")
+	// router.Static("/uploads", "./uploads")
 
 	routes.SetupRoutes(router, authService, jwtService, syncService)
 
