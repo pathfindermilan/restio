@@ -31,17 +31,20 @@ func main() {
 	}
 	defer db.Close()
 
-	db.AutoMigrate(&models.User{})
+	db.AutoMigrate(&models.User{}, &models.SyncData{})
 
 	userRepo := repositories.NewUserRepository(db)
+	syncRepo := repositories.NewSyncRepository(db)
 
-	// Create JWT service without Redis
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
 	authService := services.NewAuthService(userRepo, jwtService)
+	syncService := services.NewSyncService(syncRepo)
 
 	router := gin.Default()
 
-	routes.SetupRoutes(router, authService, jwtService)
+	router.Static("/uploads", "./uploads")
+
+	routes.SetupRoutes(router, authService, jwtService, syncService)
 
 	log.Printf("Server running on port %s", cfg.Port)
 	if err := router.Run(":" + cfg.Port); err != nil {
