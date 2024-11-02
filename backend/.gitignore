@@ -28,4 +28,4 @@ server
 
 .idea
 /uploads/documents/*
-/upload/images/*
+/uploads/images/*
