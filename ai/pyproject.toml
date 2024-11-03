@@ -14,5 +14,6 @@ dependencies = [
     "python-multipart>=0.0.17",
     "requests>=2.32.3",
     "uvicorn>=0.32.0",
-    "pymupdf>=1.22.3"
+    "pymupdf>=1.22.3",
+    "fitz>=0.0.1.dev2",
 ]
