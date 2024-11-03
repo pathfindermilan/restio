@@ -25,5 +25,9 @@ func SetupRoutes(router *gin.Engine, authService services.AuthService, jwtServic
 		protected.GET("/profile", authController.GetProfile)
 
 		protected.POST("/sync", syncController.SyncData)
+		protected.DELETE("/sync-reset", syncController.SyncReset)
+
+		protected.GET("/uploads/images/:filename", syncController.ServeImage)
+		protected.GET("/uploads/documents/:filename", syncController.ServeDocument)
 	}
 }
