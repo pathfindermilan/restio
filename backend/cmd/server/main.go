@@ -31,21 +31,23 @@ func main() {
 	}
 	defer db.Close()
 
-	db.AutoMigrate(&models.User{}, &models.SyncData{})
+	db.AutoMigrate(&models.User{}, &models.SyncData{}, &models.SyncDescription{})
 
 	userRepo := repositories.NewUserRepository(db)
 	syncRepo := repositories.NewSyncRepository(db)
+	syncDescriptionRepo := repositories.NewSyncDescriptionRepository(db)
 
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
 	authService := services.NewAuthService(userRepo, jwtService)
-	syncService := services.NewSyncService(syncRepo)
+	syncDescriptionService := services.NewSyncDescriptionService(syncDescriptionRepo)
+	syncService := services.NewSyncService(syncRepo, syncDescriptionService, &cfg)
 
 	router := gin.Default()
 
 	// router.Static("/uploads/images", "./uploads/images")
 	// router.Static("/uploads/documents", "./uploads/documents")
 
-	routes.SetupRoutes(router, authService, jwtService, syncService)
+	routes.SetupRoutes(router, authService, jwtService, syncService, syncDescriptionService)
 
 	log.Printf("Server running on port %s", cfg.Port)
 	if err := router.Run(":" + cfg.Port); err != nil {

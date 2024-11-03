@@ -15,11 +15,18 @@ import (
 )
 
 type SyncController struct {
-	syncService services.SyncService
+	syncService            services.SyncService
+	syncDescriptionService services.SyncDescriptionService
 }
 
-func NewSyncController(syncService services.SyncService) *SyncController {
-	return &SyncController{syncService}
+func NewSyncController(
+	syncService services.SyncService,
+	syncDescriptionService services.SyncDescriptionService,
+) *SyncController {
+	return &SyncController{
+		syncService:            syncService,
+		syncDescriptionService: syncDescriptionService,
+	}
 }
 
 func (ctrl *SyncController) SyncData(c *gin.Context) {
@@ -68,6 +75,8 @@ func (ctrl *SyncController) SyncData(c *gin.Context) {
 	documentFile, _ := c.FormFile("document")
 
 	var imageURL, documentURL string
+	var uploadImage bool = false
+	var uploadDocument bool = false
 
 	allowedImageTypes := map[string]bool{
 		"image/jpeg": true,
@@ -95,7 +104,7 @@ func (ctrl *SyncController) SyncData(c *gin.Context) {
 
 		cleanImageFilename := policy.Sanitize(imageFile.Filename)
 
-		uploadImage := true
+		uploadImage = true
 		if existingSyncData != nil && existingSyncData.ImageURL != "" {
 			existingImageName := filepath.Base(existingSyncData.ImageURL)
 			if strings.EqualFold(cleanImageFilename, existingImageName) {
@@ -141,7 +150,7 @@ func (ctrl *SyncController) SyncData(c *gin.Context) {
 
 		cleanDocumentFilename := policy.Sanitize(documentFile.Filename)
 
-		uploadDocument := true
+		uploadDocument = true
 		if existingSyncData != nil && existingSyncData.DocumentURL != "" {
 			existingDocumentName := filepath.Base(existingSyncData.DocumentURL)
 			if strings.EqualFold(cleanDocumentFilename, existingDocumentName) {
@@ -188,11 +197,16 @@ func (ctrl *SyncController) SyncData(c *gin.Context) {
 		DocumentURL:  documentURL,
 	}
 
+	newImageUploaded := (imageFile != nil && uploadImage)
+	newDocumentUploaded := (documentFile != nil && uploadDocument)
+
 	err = ctrl.syncService.UpsertSyncData(&syncData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save sync data"})
 		return
 	}
+
+	go ctrl.syncService.ProcessDescriptions(userID, newImageUploaded, newDocumentUploaded)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Data synced successfully"})
 }
@@ -232,6 +246,12 @@ func (ctrl *SyncController) SyncReset(c *gin.Context) {
 	deleteErr := ctrl.syncService.DeleteSyncData(userID)
 	if deleteErr != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete sync data"})
+		return
+	}
+
+	err = ctrl.syncDescriptionService.DeleteSyncDescription(userID)
+	if err != nil && !gorm.IsRecordNotFoundError(err) {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete sync description data"})
 		return
 	}
 
