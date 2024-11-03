@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Moon, User, BarChart, Brain, Heart, UserPlus, Phone } from 'lucide-react';
+import { Menu, X, Moon, User, BarChart } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from "@/utils/auth";
 
@@ -15,10 +15,7 @@ const Header = () => {
   };
 
   const navLinks = [
-    { name: 'Mood Tracking', href: '/tracking', icon: BarChart },
-    { name: 'CBT Exercises', href: '/cbt', icon: Brain },
-    { name: 'Mindfulness', href: '/mindfulness', icon: Heart },
-    { name: 'Find Therapist', href: '/therapist', icon: UserPlus },
+    { name: 'Mood Tracking', href: '/', icon: BarChart },
   ];
 
   return (
@@ -55,6 +52,12 @@ const Header = () => {
               <>
                 {auth?.user ? (
                   <div className="flex items-center space-x-4">
+                     <button
+                      onClick={handleLogout}
+                      className="text-white hover:text-purple-600 transition-colors"
+                    >
+                      Logout
+                    </button>
                     <Link
                       href="/profile"
                       className="flex items-center space-x-1 bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 transition-colors"
@@ -62,12 +65,7 @@ const Header = () => {
                       <User className="h-4 w-4" />
                       <span>Profile</span>
                     </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="text-white hover:text-purple-600 transition-colors"
-                    >
-                      Logout
-                    </button>
+                   
                   </div>
                 ) : (
                   <div className="flex items-center space-x-4">
