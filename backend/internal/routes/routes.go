@@ -8,9 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(router *gin.Engine, authService services.AuthService, jwtService auth.JWTService, syncService services.SyncService) {
+func SetupRoutes(
+	router *gin.Engine,
+	authService services.AuthService,
+	jwtService auth.JWTService,
+	syncService services.SyncService,
+	syncDescriptionService services.SyncDescriptionService,
+) {
 	authController := controllers.NewAuthController(authService)
-	syncController := controllers.NewSyncController(syncService)
+	syncController := controllers.NewSyncController(syncService, syncDescriptionService)
 
 	router.POST("/register", authController.Register)
 	router.POST("/login", authController.Login)
