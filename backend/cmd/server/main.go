@@ -42,20 +42,20 @@ func main() {
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
 	authService := services.NewAuthService(userRepo, jwtService)
 	syncDescriptionService := services.NewSyncDescriptionService(syncDescriptionRepo)
-	syncService := services.NewSyncService(syncRepo, syncDescriptionService, &cfg)
+	syncService := services.NewSyncService(userRepo, syncRepo, syncDescriptionService, &cfg)
 
 	router := gin.Default()
 
 	corsConfig := cors.Config{
-        AllowOrigins:     []string{"https://restio.xyz"},
-        AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-        AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-        ExposeHeaders:    []string{"Content-Length"},
-        AllowCredentials: true,
-        MaxAge:           12 * time.Hour,
-    }
+		AllowOrigins:     []string{"https://restio.xyz"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}
 
-    router.Use(cors.New(corsConfig))
+	router.Use(cors.New(corsConfig))
 
 	// router.Static("/uploads/images", "./uploads/images")
 	// router.Static("/uploads/documents", "./uploads/documents")

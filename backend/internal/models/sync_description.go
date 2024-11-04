@@ -10,4 +10,6 @@ type SyncDescription struct {
 	DocumentURL     string
 	DocumentSummary string
 	DocumentStatus  SyncStatus
+	AiStatus        SyncStatus
+	AiSummary       string
 }
