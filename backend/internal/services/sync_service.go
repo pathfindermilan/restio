@@ -4,15 +4,18 @@ import (
 	"backend/internal/config"
 	"backend/internal/models"
 	"backend/internal/repositories"
-
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
+
+	"fmt"
+
+	"github.com/jinzhu/gorm"
 )
 
 type SyncService interface {
@@ -21,12 +24,14 @@ type SyncService interface {
 	DeleteSyncData(userID uint) error
 	GetSyncData(userID uint) (*models.SyncData, error)
 	ProcessDescriptions(userID uint, processImage bool, processDocument bool)
+	DeleteSyncDescription(userID uint) error
 }
 
 type syncService struct {
 	syncRepo               repositories.SyncRepository
 	syncDescriptionService SyncDescriptionService
 	config                 *config.Config
+	mu                     sync.Mutex
 }
 
 func NewSyncService(
@@ -57,45 +62,120 @@ func (s *syncService) GetSyncData(userID uint) (*models.SyncData, error) {
 	return s.syncRepo.GetSyncData(userID)
 }
 
-func (s *syncService) ProcessDescriptions(userID uint, processImageFlag bool, processDocumentFlag bool) {
+func (s *syncService) DeleteSyncDescription(userID uint) error {
+	return s.syncDescriptionService.DeleteSyncDescription(userID)
+}
+
+func (s *syncService) ProcessDescriptions(userID uint, newImageUploaded bool, newDocumentUploaded bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	syncData, err := s.GetSyncData(userID)
 	if err != nil {
-		fmt.Println("Error fetching sync data:", err)
+		fmt.Println("Error fetching SyncData:", err)
 		return
 	}
 
-	syncDescription := &models.SyncDescription{
-		UserID:     userID,
-		SyncDataID: syncData.ID,
+	existingSyncDescription, err := s.syncDescriptionService.GetSyncDescriptionByUserID(userID)
+	if err != nil && !gorm.IsRecordNotFoundError(err) {
+		fmt.Println("Error fetching SyncDescription:", err)
+		return
 	}
 
-	if processImageFlag && syncData.ImageURL != "" {
-		syncDescription.ImageStatus = models.StatusInProgress
+	var syncDescription *models.SyncDescription
+	if existingSyncDescription == nil {
+		syncDescription = &models.SyncDescription{
+			UserID:     userID,
+			SyncDataID: syncData.ID,
+		}
 	} else {
-		syncDescription.ImageStatus = models.StatusNotFound
+		syncDescription = existingSyncDescription
 	}
 
-	if processDocumentFlag && syncData.DocumentURL != "" {
-		syncDescription.DocumentStatus = models.StatusInProgress
+	needToUpdate := false
+
+	if newImageUploaded {
+		if syncDescription.ImageURL != syncData.ImageURL {
+			syncDescription.ImageURL = syncData.ImageURL
+			syncDescription.ImageStatus = models.StatusInProgress
+			syncDescription.ImageSummary = ""
+			needToUpdate = true
+		}
 	} else {
-		syncDescription.DocumentStatus = models.StatusNotFound
+		if syncData.ImageURL == "" && syncDescription.ImageStatus != models.StatusNotFound {
+			syncDescription.ImageStatus = models.StatusNotFound
+			needToUpdate = true
+		}
 	}
 
-	if syncDescription.ImageStatus == models.StatusInProgress {
-		imageSummary, status := s.processImage(syncData.ImageURL)
-		syncDescription.ImageSummary = imageSummary
-		syncDescription.ImageStatus = status
+	if newDocumentUploaded {
+		if syncDescription.DocumentURL != syncData.DocumentURL {
+			syncDescription.DocumentURL = syncData.DocumentURL
+			syncDescription.DocumentStatus = models.StatusInProgress
+			syncDescription.DocumentSummary = ""
+			needToUpdate = true
+		}
+	} else {
+		if syncData.DocumentURL == "" && syncDescription.DocumentStatus != models.StatusNotFound {
+			syncDescription.DocumentStatus = models.StatusNotFound
+			needToUpdate = true
+		}
 	}
 
-	if syncDescription.DocumentStatus == models.StatusInProgress {
-		documentSummary, status := s.processDocument(syncData.DocumentURL)
-		syncDescription.DocumentSummary = documentSummary
-		syncDescription.DocumentStatus = status
+	if existingSyncDescription == nil && !newImageUploaded && !newDocumentUploaded {
+		if syncData.ImageURL == "" {
+			syncDescription.ImageStatus = models.StatusNotFound
+		}
+		if syncData.DocumentURL == "" {
+			syncDescription.DocumentStatus = models.StatusNotFound
+		}
+		needToUpdate = true
 	}
 
-	err = s.syncDescriptionService.CreateOrUpdateSyncDescription(syncDescription)
+	if existingSyncDescription == nil || needToUpdate {
+		err = s.syncDescriptionService.CreateOrUpdateSyncDescription(syncDescription)
+		if err != nil {
+			fmt.Println("Error saving SyncDescription:", err)
+			return
+		}
+	}
+
+	if newImageUploaded && syncDescription.ImageStatus == models.StatusInProgress {
+		go s.processImageAndUpdateDescription(userID, syncData.ImageURL)
+	}
+
+	if newDocumentUploaded && syncDescription.DocumentStatus == models.StatusInProgress {
+		go s.processDocumentAndUpdateDescription(userID, syncData.DocumentURL)
+	}
+}
+
+func (s *syncService) processImageAndUpdateDescription(userID uint, imageURL string) {
+	imageSummary, status := s.processImage(imageURL)
+	desc, err := s.syncDescriptionService.GetSyncDescriptionByUserID(userID)
 	if err != nil {
-		fmt.Println("Error saving sync description:", err)
+		fmt.Println("Error fetching SyncDescription for image processing:", err)
+		return
+	}
+	desc.ImageSummary = imageSummary
+	desc.ImageStatus = status
+	err = s.syncDescriptionService.CreateOrUpdateSyncDescription(desc)
+	if err != nil {
+		fmt.Println("Error updating SyncDescription after image processing:", err)
+	}
+}
+
+func (s *syncService) processDocumentAndUpdateDescription(userID uint, documentURL string) {
+	documentSummary, status := s.processDocument(documentURL)
+	desc, err := s.syncDescriptionService.GetSyncDescriptionByUserID(userID)
+	if err != nil {
+		fmt.Println("Error fetching SyncDescription for document processing:", err)
+		return
+	}
+	desc.DocumentSummary = documentSummary
+	desc.DocumentStatus = status
+	err = s.syncDescriptionService.CreateOrUpdateSyncDescription(desc)
+	if err != nil {
+		fmt.Println("Error updating SyncDescription after document processing:", err)
 	}
 }
 

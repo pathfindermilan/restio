@@ -26,33 +26,20 @@ func (r *syncRepository) CreateSyncData(data *models.SyncData) error {
 }
 
 func (r *syncRepository) UpsertSyncData(data *models.SyncData) error {
-	var existingData models.SyncData
-	err := r.db.Where("user_id = ?", data.UserID).First(&existingData).Error
-	if err != nil {
-		if gorm.IsRecordNotFoundError(err) {
-			return r.db.Create(data).Error
-		}
+	var existing models.SyncData
+	err := r.db.Where("user_id = ?", data.UserID).First(&existing).Error
+	if err != nil && !gorm.IsRecordNotFoundError(err) {
 		return err
 	}
-	existingData.ContentType = data.ContentType
-	existingData.Age = data.Age
-	existingData.QueryText = data.QueryText
-	existingData.FeelingLevel = data.FeelingLevel
-	existingData.ImageURL = data.ImageURL
-	existingData.DocumentURL = data.DocumentURL
-
-	return r.db.Save(&existingData).Error
+	if existing.ID != 0 {
+		data.ID = existing.ID
+		return r.db.Save(data).Error
+	}
+	return r.db.Create(data).Error
 }
 
 func (r *syncRepository) DeleteSyncData(userID uint) error {
-	result := r.db.Where("user_id = ?", userID).Delete(&models.SyncData{})
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
-	}
-	return nil
+	return r.db.Where("user_id = ?", userID).Delete(&models.SyncData{}).Error
 }
 
 func (r *syncRepository) GetSyncData(userID uint) (*models.SyncData, error) {

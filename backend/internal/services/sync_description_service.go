@@ -6,27 +6,27 @@ import (
 )
 
 type SyncDescriptionService interface {
-    CreateOrUpdateSyncDescription(data *models.SyncDescription) error
-    GetSyncDescription(userID uint) (*models.SyncDescription, error)
-    DeleteSyncDescription(userID uint) error
+	GetSyncDescriptionByUserID(userID uint) (*models.SyncDescription, error)
+	CreateOrUpdateSyncDescription(desc *models.SyncDescription) error
+	DeleteSyncDescription(userID uint) error
 }
 
 type syncDescriptionService struct {
-    syncDescriptionRepo repositories.SyncDescriptionRepository
+	repo repositories.SyncDescriptionRepository
 }
 
-func NewSyncDescriptionService(syncDescriptionRepo repositories.SyncDescriptionRepository) SyncDescriptionService {
-    return &syncDescriptionService{syncDescriptionRepo}
+func NewSyncDescriptionService(repo repositories.SyncDescriptionRepository) SyncDescriptionService {
+	return &syncDescriptionService{repo}
 }
 
-func (s *syncDescriptionService) CreateOrUpdateSyncDescription(data *models.SyncDescription) error {
-    return s.syncDescriptionRepo.CreateOrUpdateSyncDescription(data)
+func (s *syncDescriptionService) GetSyncDescriptionByUserID(userID uint) (*models.SyncDescription, error) {
+	return s.repo.GetSyncDescriptionByUserID(userID)
 }
 
-func (s *syncDescriptionService) GetSyncDescription(userID uint) (*models.SyncDescription, error) {
-    return s.syncDescriptionRepo.GetSyncDescriptionByUserID(userID)
+func (s *syncDescriptionService) CreateOrUpdateSyncDescription(desc *models.SyncDescription) error {
+	return s.repo.CreateOrUpdateSyncDescription(desc)
 }
 
 func (s *syncDescriptionService) DeleteSyncDescription(userID uint) error {
-    return s.syncDescriptionRepo.DeleteSyncDescription(userID)
+	return s.repo.DeleteSyncDescription(userID)
 }
