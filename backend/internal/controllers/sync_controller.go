@@ -38,12 +38,19 @@ func (ctrl *SyncController) SyncData(c *gin.Context) {
 	userID := userIDInterface.(uint)
 
 	contentType := c.PostForm("content_type")
-	ageStr := c.PostForm("age")
-	age, err := strconv.Atoi(ageStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid age"})
+
+	ageValue := c.PostForm("age")
+	var age int
+	if ageValue == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Age is required"})
 		return
 	}
+	age, err := strconv.Atoi(ageValue)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid age format"})
+		return
+	}
+
 	queryText := c.PostForm("query_text")
 
 	feelingLevelStr := c.PostForm("feeling_level")
