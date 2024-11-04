@@ -27,3 +27,5 @@ go.work.sum
 server
 
 .idea
+/uploads/documents/*
+/uploads/images/*

@@ -1,0 +1,105 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/go.yml"
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.23.2"
+
+      - name: Build Backend
+        run: |
+          cd backend
+          go build -o server ./cmd/server/main.go
+
+      - name: Deploy to Directory
+        run: |
+          sudo mkdir -p /var/www/restio/backend
+          sudo cp -rf ./backend/server /var/www/restio/backend/
+
+          if [ ! -d "/var/www/restio/backend/uploads/documents/" ]; then
+              echo "directory for documents not found!"
+              sudo mkdir -p /var/www/restio/backend/uploads/documents/
+          fi
+
+          if [ ! -d "/var/www/restio/backend/uploads/images/" ]; then
+              echo "directory for documents not found!"
+              sudo mkdir -p /var/www/restio/backend/uploads/images/
+          fi
+
+          sudo chmod -R 755 /var/www/restio/backend/uploads/
+
+      - name: Create .env file
+        run: |
+          echo "Creating .env file"
+          sudo bash -c 'cat > /var/www/restio/backend/.env << EOL
+          DB_NAME="${{ secrets.DB_NAME }}"
+          DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+          DB_USER="${{ secrets.DB_USER }}"
+          DB_PORT="${{ secrets.DB_PORT }}"
+          DB_HOST="${{ secrets.DB_HOST }}"
+
+          JWT_SECRET="${{ secrets.JWT_SECRET }}"
+          PORT=${{ secrets.PORT }}
+
+          SMTP_HOST="${{ secrets.SMTP_HOST }}"
+          SMTP_PORT="${{ secrets.SMTP_PORT }}"
+          SMTP_USE_TLS="${{ secrets.SMTP_USE_TLS }}"
+          SMTP_USERNAME="${{ secrets.SMTP_USERNAME }}"
+          SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}"
+
+          FRONTEND_URL="${{ secrets.FRONTEND_URL }}"
+
+          REDIS_HOST="${{ secrets.REDIS_HOST }}"
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
+          REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD }}"
+          REDIS_DB=${{ secrets.REDIS_DB }}
+
+          DESCRIBE_IMAGE_ENDPOINT=${{ secrets.DESCRIBE_IMAGE_ENDPOINT }}
+          DESCRIBE_DOCUMENT_ENDPOINT=${{ secrets.DESCRIBE_DOCUMENT_ENDPOINT }}'
+
+      - name: Verify .env file
+        run: |
+          if [ -f "/var/www/restio/backend/.env" ]; then
+              echo ".env file created successfully"
+              ls -l /var/www/restio/backend/.env
+          else
+              echo ".env file not created"
+              exit 1
+          fi
+
+      - name: Restart Service
+        shell: bash
+        run: |
+          set -e
+
+          if [ ! -d "/var/www/restio/backend" ]; then
+              echo "Backend directory not found!"
+              exit 1
+          fi
+
+          cd /var/www/restio/backend
+          if [ -f "server" ]; then
+              sudo chmod +x server
+              echo "Server file permissions updated"
+              sudo systemctl restart restio-backend.service
+              echo "Service restarted"
+          else
+              echo "Server file not found in $(pwd)"
+              ls -la  # list directory contents for debugging
+              exit 1
+          fi

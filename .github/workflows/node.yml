@@ -1,0 +1,67 @@
+name: Deploy Frontend
+on:
+  push:
+    branches:
+      - main
+      - frontend
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/node.yml'
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20.11.1'
+    
+    - name: Install Dependencies
+      run: |
+        cd frontend
+        npm install
+    
+    - name: Build Frontend
+      run: |
+        cd frontend
+        npm run build
+    
+    - name: Deploy to Directory
+      run: |
+        sudo mkdir -p /var/www/restio/frontend
+        
+        sudo cp -rf ./frontend/* /var/www/restio/frontend/
+        
+    - name: Create .env file
+      run: |
+        echo "Creating .env file"
+        sudo bash -c 'cat > /var/www/restio/frontend/.env << EOL
+        NEXT_PUBLIC_SERVER="${{ secrets.NEXT_PUBLIC_SERVER }}"
+        PORT=3000'
+    
+    - name: Verify .env file
+      run: |
+        if [ -f "/var/www/restio/frontend/.env" ]; then
+            echo ".env file created successfully"
+            ls -l /var/www/restio/frontend/.env
+        else
+            echo ".env file not created"
+            exit 1
+        fi
+
+    - name: Install Production Dependencies
+      run: |
+        cd /var/www/restio/frontend
+        sudo npm install
+    
+    - name: Restart Service
+      run: |
+        sudo systemctl daemon-reload
+        sudo systemctl enable restio-frontend.service
+        sudo systemctl restart restio-frontend.service
+        sudo systemctl status restio-frontend.service

@@ -1,0 +1,52 @@
+name: Deploy FastAPI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "ai/**"
+      - ".github/workflows/fastapi.yml"
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Deploy to Directory
+        run: |
+          sudo mkdir -p /var/www/restio/ai
+          sudo cp -rf ./ai /var/www/restio/
+          
+      - name: Install Requirements
+        run: |
+          bash -c 'cd /var/www/restio/ai && uv sync'
+
+      - name: Create .env file
+        run: |
+          echo "Creating .env file"
+          sudo bash -c 'cat > /var/www/restio/ai/.env << EOL
+          ARIA_API_KEY="${{ secrets.ARIA_API_KEY }}"
+          ALLEGRO_API_KEY="${{ secrets.ALLEGRO_API_KEY }}"'
+
+      - name: Verify .env file
+        run: |
+          if [ -f "/var/www/restio/ai/.env" ]; then
+              echo ".env file created successfully"
+              ls -l /var/www/restio/ai/.env
+          else
+              echo ".env file not created"
+              exit 1
+          fi
+
+      - name: Start/restart FastAPI Service
+        run: |
+          sudo systemctl daemon-reload
+          sudo systemctl restart restio-fastapi.service

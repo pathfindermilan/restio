@@ -6,57 +6,31 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { KeyRound, ArrowRight } from "lucide-react";
 
-export default function VerifyUser() {
+export default function ActivateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [username, setUsername] = useState("");
-  const [verificationCode, setVerificationCode] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [verification_code, setCode] = useState("");
 
   useEffect(() => {
-    // Get username from URL parameters
     const usernameParam = searchParams.get("username");
     if (usernameParam) {
       setUsername(usernameParam);
-    } else {
-      setError("Missing username parameter");
     }
   }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    try {
-      if (!username || !verificationCode) {
-        throw new Error("Username and verification code are required");
-      }
-
-      // Instead of directly routing, you might want to make an API call first
-      // const response = await fetch('/api/verify', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ username, verificationCode }),
-      // });
-      
-      // if (!response.ok) throw new Error('Verification failed');
-      
-      // After successful verification
-      router.push(`/${username}/${verificationCode}`);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
+    if (username && verification_code) {
+      router.push(`/${username}/${verification_code}`);
     }
   };
 
-  if (error && !username) {
+  if (!username) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center text-red-400 bg-red-900/50 p-4 rounded-md">
-          {error}. Please check your activation email.
+          Missing username parameter. Please check your activation email.
         </div>
       </div>
     );
@@ -93,16 +67,6 @@ export default function VerifyUser() {
             </p>
           </motion.div>
 
-          {error && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mb-4 p-3 rounded-lg bg-red-900/50 text-red-400 text-sm"
-            >
-              {error}
-            </motion.div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-6">
             <motion.div
               initial={{ x: -20, opacity: 0 }}
@@ -114,13 +78,12 @@ export default function VerifyUser() {
               </label>
               <input
                 type="text"
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value)}
+                value={verification_code}
+                onChange={(e) => setCode(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg bg-gray-800/50 border border-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all duration-200 text-white placeholder-gray-400"
                 placeholder="Enter your activation code"
                 required
                 autoFocus
-                disabled={isLoading}
               />
             </motion.div>
 
@@ -131,17 +94,10 @@ export default function VerifyUser() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-lg font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-lg font-semibold transition-all duration-200"
             >
-              {isLoading ? (
-                "Processing..."
-              ) : (
-                <>
-                  Activate Account
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
+              Activate Account
+              <ArrowRight className="w-4 h-4" />
             </motion.button>
           </form>
 
