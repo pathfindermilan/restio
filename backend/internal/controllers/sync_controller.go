@@ -19,10 +19,7 @@ type SyncController struct {
 	syncDescriptionService services.SyncDescriptionService
 }
 
-func NewSyncController(
-	syncService services.SyncService,
-	syncDescriptionService services.SyncDescriptionService,
-) *SyncController {
+func NewSyncController(syncService services.SyncService, syncDescriptionService services.SyncDescriptionService) *SyncController {
 	return &SyncController{
 		syncService:            syncService,
 		syncDescriptionService: syncDescriptionService,
@@ -114,6 +111,9 @@ func (ctrl *SyncController) SyncData(c *gin.Context) {
 		return
 	}
 
+	newImageUploaded := false
+	newDocumentUploaded := false
+
 	if imageFile != nil {
 		mimeType := imageFile.Header.Get("Content-Type")
 		if !allowedImageTypes[mimeType] {
@@ -126,9 +126,14 @@ func (ctrl *SyncController) SyncData(c *gin.Context) {
 		uploadImage = true
 		if existingSyncData != nil && existingSyncData.ImageURL != "" {
 			existingImageName := filepath.Base(existingSyncData.ImageURL)
-			if strings.EqualFold(cleanImageFilename, existingImageName) {
+			if !strings.EqualFold(cleanImageFilename, existingImageName) {
+				newImageUploaded = true
+				uploadImage = true
+			} else {
 				uploadImage = false
 			}
+		} else {
+			newImageUploaded = true
 		}
 
 		if uploadImage {
@@ -138,7 +143,7 @@ func (ctrl *SyncController) SyncData(c *gin.Context) {
 				}
 			}
 
-			newImageFilename := strconv.Itoa(int(userID)) + "-" + imageFile.Filename
+			newImageFilename := strconv.Itoa(int(userID)) + "-" + cleanImageFilename
 			imagePath := filepath.Join("uploads/images", newImageFilename)
 
 			if err := os.MkdirAll(filepath.Dir(imagePath), os.ModePerm); err != nil {
@@ -172,9 +177,14 @@ func (ctrl *SyncController) SyncData(c *gin.Context) {
 		uploadDocument = true
 		if existingSyncData != nil && existingSyncData.DocumentURL != "" {
 			existingDocumentName := filepath.Base(existingSyncData.DocumentURL)
-			if strings.EqualFold(cleanDocumentFilename, existingDocumentName) {
+			if !strings.EqualFold(cleanDocumentFilename, existingDocumentName) {
+				newDocumentUploaded = true
+				uploadDocument = true
+			} else {
 				uploadDocument = false
 			}
+		} else {
+			newDocumentUploaded = true
 		}
 
 		if uploadDocument {
@@ -184,7 +194,7 @@ func (ctrl *SyncController) SyncData(c *gin.Context) {
 				}
 			}
 
-			newDocumentFilename := strconv.Itoa(int(userID)) + "-" + documentFile.Filename
+			newDocumentFilename := strconv.Itoa(int(userID)) + "-" + cleanDocumentFilename
 			documentPath := filepath.Join("uploads/documents", newDocumentFilename)
 
 			if err := os.MkdirAll(filepath.Dir(documentPath), os.ModePerm); err != nil {
@@ -216,16 +226,13 @@ func (ctrl *SyncController) SyncData(c *gin.Context) {
 		DocumentURL:  documentURL,
 	}
 
-	newImageUploaded := (imageFile != nil && uploadImage)
-	newDocumentUploaded := (documentFile != nil && uploadDocument)
-
 	err = ctrl.syncService.UpsertSyncData(&syncData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save sync data"})
 		return
 	}
 
-	go ctrl.syncService.ProcessDescriptions(userID, newImageUploaded, newDocumentUploaded)
+	ctrl.syncService.ProcessDescriptions(userID, newImageUploaded, newDocumentUploaded)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Data synced successfully"})
 }
@@ -268,7 +275,7 @@ func (ctrl *SyncController) SyncReset(c *gin.Context) {
 		return
 	}
 
-	err = ctrl.syncDescriptionService.DeleteSyncDescription(userID)
+	err = ctrl.syncService.DeleteSyncDescription(userID) // Use SyncService method
 	if err != nil && !gorm.IsRecordNotFoundError(err) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete sync description data"})
 		return

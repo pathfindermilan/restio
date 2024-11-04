@@ -7,38 +7,41 @@ import (
 )
 
 type SyncDescriptionRepository interface {
-    CreateOrUpdateSyncDescription(data *models.SyncDescription) error
-    GetSyncDescriptionByUserID(userID uint) (*models.SyncDescription, error)
-    DeleteSyncDescription(userID uint) error
+	GetSyncDescriptionByUserID(userID uint) (*models.SyncDescription, error)
+	CreateOrUpdateSyncDescription(desc *models.SyncDescription) error
+	DeleteSyncDescription(userID uint) error
 }
 
 type syncDescriptionRepository struct {
-    db *gorm.DB
+	db *gorm.DB
 }
 
 func NewSyncDescriptionRepository(db *gorm.DB) SyncDescriptionRepository {
-    return &syncDescriptionRepository{db}
-}
-
-func (r *syncDescriptionRepository) CreateOrUpdateSyncDescription(data *models.SyncDescription) error {
-    var existing models.SyncDescription
-    err := r.db.Where("user_id = ?", data.UserID).First(&existing).Error
-    if err != nil && !gorm.IsRecordNotFoundError(err) {
-        return err
-    }
-    if existing.ID != 0 {
-        data.ID = existing.ID
-        return r.db.Save(data).Error
-    }
-    return r.db.Create(data).Error
+	return &syncDescriptionRepository{db}
 }
 
 func (r *syncDescriptionRepository) GetSyncDescriptionByUserID(userID uint) (*models.SyncDescription, error) {
-    var data models.SyncDescription
-    err := r.db.Where("user_id = ?", userID).First(&data).Error
-    return &data, err
+	var desc models.SyncDescription
+	err := r.db.Where("user_id = ?", userID).First(&desc).Error
+	if err != nil {
+		return nil, err
+	}
+	return &desc, nil
+}
+
+func (r *syncDescriptionRepository) CreateOrUpdateSyncDescription(desc *models.SyncDescription) error {
+	var existing models.SyncDescription
+	err := r.db.Where("user_id = ?", desc.UserID).First(&existing).Error
+	if err != nil && !gorm.IsRecordNotFoundError(err) {
+		return err
+	}
+	if existing.ID != 0 {
+		desc.ID = existing.ID
+		return r.db.Save(desc).Error
+	}
+	return r.db.Create(desc).Error
 }
 
 func (r *syncDescriptionRepository) DeleteSyncDescription(userID uint) error {
-    return r.db.Where("user_id = ?", userID).Delete(&models.SyncDescription{}).Error
+	return r.db.Where("user_id = ?", userID).Delete(&models.SyncDescription{}).Error
 }
