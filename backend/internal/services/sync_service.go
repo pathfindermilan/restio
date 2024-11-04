@@ -339,6 +339,9 @@ func (s *syncService) GenerateAnswer(user_id string) (string, models.SyncStatus)
 	}
 
 	user, err := s.userRepo.GetUserByID(userID)
+	if err != nil {
+		return "", models.StatusErrored
+	}
 	name := user.Name
 
 	payload := map[string]interface{}{
@@ -356,7 +359,7 @@ func (s *syncService) GenerateAnswer(user_id string) (string, models.SyncStatus)
 		return "", models.StatusErrored
 	}
 
-	req, err := http.NewRequest("POST", "https://restio.xyz/generate-answer", bytes.NewBuffer(payloadBytes))
+	req, err := http.NewRequest("POST", "https://restio.site/generate-answer", bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		return "", models.StatusErrored
 	}
