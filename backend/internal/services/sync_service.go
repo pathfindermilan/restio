@@ -6,14 +6,15 @@ import (
 	"backend/internal/repositories"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
-
-	"fmt"
 
 	"github.com/jinzhu/gorm"
 )
@@ -25,9 +26,12 @@ type SyncService interface {
 	GetSyncData(userID uint) (*models.SyncData, error)
 	ProcessDescriptions(userID uint, processImage bool, processDocument bool)
 	DeleteSyncDescription(userID uint) error
+	ResetAIResponse(userID uint) error
+	GenerateAnswer(userID string) (string, models.SyncStatus)
 }
 
 type syncService struct {
+	userRepo               repositories.UserRepository
 	syncRepo               repositories.SyncRepository
 	syncDescriptionService SyncDescriptionService
 	config                 *config.Config
@@ -35,11 +39,13 @@ type syncService struct {
 }
 
 func NewSyncService(
+	userRepo repositories.UserRepository,
 	syncRepo repositories.SyncRepository,
 	syncDescriptionService SyncDescriptionService,
 	config *config.Config,
 ) SyncService {
 	return &syncService{
+		userRepo:               userRepo,
 		syncRepo:               syncRepo,
 		syncDescriptionService: syncDescriptionService,
 		config:                 config,
@@ -64,6 +70,39 @@ func (s *syncService) GetSyncData(userID uint) (*models.SyncData, error) {
 
 func (s *syncService) DeleteSyncDescription(userID uint) error {
 	return s.syncDescriptionService.DeleteSyncDescription(userID)
+}
+
+func (s *syncService) ResetAIResponse(userID uint) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	syncDesc, err := s.syncDescriptionService.GetSyncDescriptionByUserID(userID)
+	if err != nil && !gorm.IsRecordNotFoundError(err) {
+		return err
+	}
+
+	if syncDesc == nil {
+		syncDesc = &models.SyncDescription{
+			UserID:     userID,
+			AiSummary:  "",
+			AiStatus:   models.StatusInProgress,
+			SyncDataID: 0, // Assuming 0 or appropriate value
+		}
+		return s.syncDescriptionService.CreateOrUpdateSyncDescription(syncDesc)
+	}
+
+	updated := false
+	if syncDesc.AiSummary != "" || syncDesc.AiStatus != models.StatusInProgress {
+		syncDesc.AiSummary = ""
+		syncDesc.AiStatus = models.StatusInProgress
+		updated = true
+	}
+
+	if updated {
+		return s.syncDescriptionService.CreateOrUpdateSyncDescription(syncDesc)
+	}
+
+	return nil
 }
 
 func (s *syncService) ProcessDescriptions(userID uint, newImageUploaded bool, newDocumentUploaded bool) {
@@ -147,6 +186,15 @@ func (s *syncService) ProcessDescriptions(userID uint, newImageUploaded bool, ne
 	if newDocumentUploaded && syncDescription.DocumentStatus == models.StatusInProgress {
 		go s.processDocumentAndUpdateDescription(userID, syncData.DocumentURL)
 	}
+
+	go func(uid uint) {
+		answer, status := s.GenerateAnswer(strconv.Itoa(int(uid)))
+		if status != models.StatusDone {
+			fmt.Printf("Failed to generate answer for user %d\n", uid)
+			return
+		}
+		fmt.Printf("Generated answer for user %d: %s\n", uid, answer)
+	}(userID)
 }
 
 func (s *syncService) processImageAndUpdateDescription(userID uint, imageURL string) {
@@ -271,4 +319,81 @@ func (s *syncService) processDocument(documentPath string) (string, models.SyncS
 	}
 
 	return respData.DocumentSummary, models.StatusDone
+}
+
+func (s *syncService) GenerateAnswer(user_id string) (string, models.SyncStatus) {
+	uid, err := strconv.Atoi(user_id)
+	if err != nil {
+		return "", models.StatusErrored
+	}
+	userID := uint(uid)
+
+	syncData, err := s.GetSyncData(userID)
+	if err != nil {
+		return "", models.StatusErrored
+	}
+
+	syncDesc, err := s.syncDescriptionService.GetSyncDescriptionByUserID(userID)
+	if err != nil {
+		return "", models.StatusErrored
+	}
+
+	user, err := s.userRepo.GetUserByID(userID)
+	name := user.Name
+
+	payload := map[string]interface{}{
+		"name":             name,
+		"age":              syncData.Age,
+		"image_summary":    syncDesc.ImageSummary,
+		"document_summary": syncDesc.DocumentSummary,
+		"user_transcript":  syncData.QueryText,
+		"content_type":     syncData.ContentType,
+		"feeling_level":    syncData.FeelingLevel,
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return "", models.StatusErrored
+	}
+
+	req, err := http.NewRequest("POST", "https://restio.xyz/generate-answer", bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		return "", models.StatusErrored
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", models.StatusErrored
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", models.StatusErrored
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("FastAPI responded with status: %d, body: %s\n", resp.StatusCode, string(body))
+		return "", models.StatusErrored
+	}
+
+	var responseData struct {
+		AI_Summary string `json:"ai_summary"`
+	}
+	err = json.Unmarshal(body, &responseData)
+	if err != nil {
+		return "", models.StatusErrored
+	}
+
+	syncDesc.AiSummary = responseData.AI_Summary
+	syncDesc.AiStatus = models.StatusDone
+
+	err = s.syncDescriptionService.CreateOrUpdateSyncDescription(syncDesc)
+	if err != nil {
+		return "", models.StatusErrored
+	}
+
+	return syncDesc.AiSummary, models.StatusDone
 }

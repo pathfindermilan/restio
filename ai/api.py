@@ -7,6 +7,15 @@ import fitz
 
 app = FastAPI()
 
+class UserData(BaseModel):
+    name: str
+    age: int
+    image_summary: str
+    document_summary: str
+    user_transcript: str
+    content_type: str
+    feeling_level: str
+
 class TextAnalysisRequest(BaseModel):
     text: str
 
@@ -59,16 +68,9 @@ async def analyze_pdf_summary(document: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/generate-answer")
-async def analyze_user_data(
-    name: str,
-    age: int,
-    image_summary: str,
-    document_summary: str,
-    user_transcript: str,
-    content_type: str,
-    feeling_level: str,
-):
+async def analyze_user_data(data: UserData):
     """
     Analyzes user data to generate a motivational AI response based on the user's inputs.
 

@@ -232,6 +232,12 @@ func (ctrl *SyncController) SyncData(c *gin.Context) {
 		return
 	}
 
+	err = ctrl.syncService.ResetAIResponse(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reset AI response"})
+		return
+	}
+
 	ctrl.syncService.ProcessDescriptions(userID, newImageUploaded, newDocumentUploaded)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Data synced successfully"})
