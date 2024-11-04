@@ -45,7 +45,13 @@ func (ctrl *SyncController) SyncData(c *gin.Context) {
 		return
 	}
 	queryText := c.PostForm("query_text")
-	feelingLevel := c.PostForm("feeling_level")
+
+	feelingLevelStr := c.PostForm("feeling_level")
+	feelingLevelInt, err := strconv.Atoi(feelingLevelStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid feeling_level"})
+		return
+	}
 
 	allowedContentTypes := map[string]bool{
 		"joke":     true,
@@ -58,15 +64,21 @@ func (ctrl *SyncController) SyncData(c *gin.Context) {
 		return
 	}
 
-	allowedFeelings := map[string]bool{
-		"happy":     true,
-		"sad":       true,
-		"angry":     true,
-		"confused":  true,
-		"confident": true,
-		"tired":     true,
+	feelingLevelMap := map[int]string{
+		1:  "very sad",
+		2:  "sad",
+		3:  "slightly down",
+		4:  "neutral low",
+		5:  "okay",
+		6:  "slightly good",
+		7:  "good",
+		8:  "very good",
+		9:  "great",
+		10: "excellent",
 	}
-	if !allowedFeelings[feelingLevel] {
+
+	feelingLevel, exists := feelingLevelMap[feelingLevelInt]
+	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid feeling_level"})
 		return
 	}
