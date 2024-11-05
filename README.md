@@ -1,7 +1,13 @@
 # 🌟 Personal Mood Synchronizer App 🌟
 
 ## Watch Our Introduction Video
-[![Watch the demo 🎥](https://www.youtube.com/watch?v=7VcQHysm6qE&t=62s)
+<p align="left">
+
+  <a href="https://www.youtube.com/watch?v=7VcQHysm6qE&t=62s">
+    <img src=".images/readme/youtube.png" alt="Restio" style="vertical-align:top; margin:6px 4px">
+  </a>
+
+</p>
 
 ## Project Overview
 The **Restio** is designed to enhance mental health and promote self-improvement through positive daily habits. This innovative application empowers users by integrating mindfulness practices, personalized mood analysis, and community support, helping individuals cultivate a more positive mindset in their daily lives. 💪✨
