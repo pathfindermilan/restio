@@ -1,12 +1,11 @@
 # 🌟 Personal Mood Synchronizer App 🌟
-
-## Watch Our Introduction Video
 <p align="left">
-
   <a href="https://www.youtube.com/watch?v=7VcQHysm6qE&t=62s">
-    <img src=".images/readme/youtube.png" alt="Restio" style="vertical-align:top; margin:6px 4px">
+    <img src=".images/readme/youtube.png" alt="Restio" style="vertical-align:top; margin:6px 4px; width:100px;">
   </a>
-
+  <a href="https://restio.xyz">
+    <img src=".images/readme/web.png" alt="web" style="vertical-align:top; margin:6px 4px; width:100px">
+  </a> 
 </p>
 
 ## Project Overview
