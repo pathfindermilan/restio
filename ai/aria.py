@@ -4,8 +4,11 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from typing import List, Dict, Any
+from pydantic import BaseModel
+from typing import Optional
 
 load_dotenv()
+
 base_url = 'https://api.rhymes.ai/v1/'
 api_key = os.getenv('ARIA_API_KEY')
 client = ChatOpenAI(
@@ -16,6 +19,16 @@ client = ChatOpenAI(
     temperature=0.6,
     max_tokens=1024
 )
+
+class UserData(BaseModel):
+    name: str
+    age: int
+    image_summary: str
+    document_summary: str
+    user_transcript: str
+    content_type: str
+    feeling_level: str
+
 
 def analyze_image_with_text(base64_image: str, prompt: str) -> str:
     """
