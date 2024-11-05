@@ -4,7 +4,7 @@
     <img src=".images/readme/youtube.png" alt="Restio" style="vertical-align:top; margin:6px 4px; width:100px;">
   </a>
   <a href="https://restio.xyz">
-    <img src=".images/readme/web.png" alt="web" style="vertical-align:top; margin:6px 4px; width:100px">
+    <img src=".images/readme/web.png" alt="web" style="vertical-align:top; margin:6px 4px; width:75px">
   </a> 
 </p>
 
