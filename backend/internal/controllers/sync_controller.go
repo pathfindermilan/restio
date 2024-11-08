@@ -17,12 +17,21 @@ import (
 type SyncController struct {
 	syncService            services.SyncService
 	syncDescriptionService services.SyncDescriptionService
+	syncFeedbackService    services.SyncFeedbackService
+	aiSummaryService       services.AISummaryService
 }
 
-func NewSyncController(syncService services.SyncService, syncDescriptionService services.SyncDescriptionService) *SyncController {
+func NewSyncController(
+	syncService services.SyncService,
+	syncDescriptionService services.SyncDescriptionService,
+	syncFeedbackService services.SyncFeedbackService,
+	aiSummaryService services.AISummaryService,
+) *SyncController {
 	return &SyncController{
 		syncService:            syncService,
 		syncDescriptionService: syncDescriptionService,
+		syncFeedbackService:    syncFeedbackService,
+		aiSummaryService:       aiSummaryService,
 	}
 }
 
@@ -232,13 +241,57 @@ func (ctrl *SyncController) SyncData(c *gin.Context) {
 		return
 	}
 
-	err = ctrl.syncService.ResetAIResponse(userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reset AI response"})
+	existingSyncFeedback, err := ctrl.syncFeedbackService.GetSyncFeedback(userID)
+	if err != nil && !gorm.IsRecordNotFoundError(err) {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve existing sync feedback"})
 		return
 	}
 
-	ctrl.syncService.ProcessDescriptions(userID, newImageUploaded, newDocumentUploaded)
+	var syncFeedback models.SyncFeedback
+	syncFeedback = models.SyncFeedback{
+		UserID:     userID,
+		SyncDataID: syncData.ID,
+	}
+
+	if existingSyncFeedback != nil {
+		syncFeedback.HumanFeedback = existingSyncFeedback.HumanFeedback
+		syncFeedback.HumanReaction = existingSyncFeedback.HumanReaction
+		syncFeedback.NewContentType = existingSyncFeedback.NewContentType
+		existingSyncFeedback.QuestionsRelly = existingSyncFeedback.QuestionsRelly + 1
+	}
+
+	err = ctrl.syncFeedbackService.UpsertSyncFeedback(&syncFeedback)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save sync feedback"})
+		return
+	}
+
+	existingAISummary, err := ctrl.aiSummaryService.GetAISummary(userID)
+	if err != nil && !gorm.IsRecordNotFoundError(err) {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve existing sync feedback"})
+		return
+	}
+
+	var aiSummary models.AISummary
+	aiSummary = models.AISummary{
+		UserID:     userID,
+		SyncDataID: syncData.ID,
+	}
+
+	if existingAISummary != nil {
+		aiSummary.AriaResponse = existingAISummary.AriaResponse
+		aiSummary.AriaResponseStatus = existingAISummary.AriaResponseStatus
+		aiSummary.AllegroResponse = existingAISummary.AllegroResponse
+		aiSummary.AllegroResponseStatus = existingAISummary.AllegroResponseStatus
+	}
+
+	err = ctrl.aiSummaryService.UpsertAISummary(&aiSummary)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save sync feedback"})
+		return
+	}
+
+	ctrl.syncDescriptionService.ProcessSyncDescription(userID, newImageUploaded, newDocumentUploaded)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Data synced successfully"})
 }
@@ -281,7 +334,19 @@ func (ctrl *SyncController) SyncReset(c *gin.Context) {
 		return
 	}
 
-	err = ctrl.syncService.DeleteSyncDescription(userID) // Use SyncService method
+	err = ctrl.syncDescriptionService.DeleteSyncDescription(userID)
+	if err != nil && !gorm.IsRecordNotFoundError(err) {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete sync description data"})
+		return
+	}
+
+	err = ctrl.syncFeedbackService.DeleteSyncFeedback(userID)
+	if err != nil && !gorm.IsRecordNotFoundError(err) {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete sync description data"})
+		return
+	}
+
+	err = ctrl.aiSummaryService.DeleteAISummary(userID)
 	if err != nil && !gorm.IsRecordNotFoundError(err) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete sync description data"})
 		return

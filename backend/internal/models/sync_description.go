@@ -5,11 +5,9 @@ type SyncDescription struct {
 	UserID          uint `gorm:"uniqueIndex"`
 	SyncDataID      uint
 	ImageURL        string
-	ImageSummary    string
 	ImageStatus     SyncStatus
+	ImageSummary    string
 	DocumentURL     string
-	DocumentSummary string
 	DocumentStatus  SyncStatus
-	AiStatus        SyncStatus
-	AiSummary       string
+	DocumentSummary string
 }

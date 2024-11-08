@@ -9,7 +9,7 @@ import (
 type SyncDescriptionRepository interface {
 	GetSyncDescriptionByUserID(userID uint) (*models.SyncDescription, error)
 	CreateOrUpdateSyncDescription(desc *models.SyncDescription) error
-	DeleteSyncDescription(userID uint) error
+	DeleteSyncDescriptionByUserID(userID uint) error
 }
 
 type syncDescriptionRepository struct {
@@ -42,6 +42,6 @@ func (r *syncDescriptionRepository) CreateOrUpdateSyncDescription(desc *models.S
 	return r.db.Create(desc).Error
 }
 
-func (r *syncDescriptionRepository) DeleteSyncDescription(userID uint) error {
+func (r *syncDescriptionRepository) DeleteSyncDescriptionByUserID(userID uint) error {
 	return r.db.Where("user_id = ?", userID).Delete(&models.SyncDescription{}).Error
 }

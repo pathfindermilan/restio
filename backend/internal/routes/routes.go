@@ -14,9 +14,12 @@ func SetupRoutes(
 	jwtService auth.JWTService,
 	syncService services.SyncService,
 	syncDescriptionService services.SyncDescriptionService,
+	syncFeedbackService services.SyncFeedbackService,
+	aiSummaryService services.AISummaryService,
 ) {
 	authController := controllers.NewAuthController(authService)
-	syncController := controllers.NewSyncController(syncService, syncDescriptionService)
+	syncController := controllers.NewSyncController(syncService, syncDescriptionService, syncFeedbackService, aiSummaryService)
+	syncFeebackController := controllers.NewSyncFeedbackController(syncService, syncFeedbackService, aiSummaryService)
 
 	router.POST("/register", authController.Register)
 	router.POST("/login", authController.Login)
@@ -32,6 +35,7 @@ func SetupRoutes(
 
 		protected.POST("/sync", syncController.SyncData)
 		protected.DELETE("/sync-reset", syncController.SyncReset)
+		protected.POST("/sync-feedback", syncFeebackController.SyncFeedackData)
 
 		protected.GET("/uploads/images/:filename", syncController.ServeImage)
 		protected.GET("/uploads/documents/:filename", syncController.ServeDocument)

@@ -33,16 +33,26 @@ func main() {
 	}
 	defer db.Close()
 
-	db.AutoMigrate(&models.User{}, &models.SyncData{}, &models.SyncDescription{})
+	db.AutoMigrate(&models.User{}, &models.SyncData{}, &models.SyncDescription{}, &models.SyncFeedback{}, &models.AISummary{})
 
 	userRepo := repositories.NewUserRepository(db)
 	syncRepo := repositories.NewSyncRepository(db)
 	syncDescriptionRepo := repositories.NewSyncDescriptionRepository(db)
+	syncFeedbackRepo := repositories.NewSyncFeedbackRepository(db)
+	aiSummaryRepo := repositories.NewAISummaryRepository(db)
 
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
 	authService := services.NewAuthService(userRepo, jwtService)
-	syncDescriptionService := services.NewSyncDescriptionService(syncDescriptionRepo)
-	syncService := services.NewSyncService(userRepo, syncRepo, syncDescriptionService, &cfg)
+	syncService := services.NewSyncService(syncRepo)
+	syncDescriptionService := services.NewSyncDescriptionService(syncDescriptionRepo, syncService, &cfg)
+	syncFeedbackService := services.NewSyncFeedbackService(syncFeedbackRepo)
+	aiSummaryService := services.NewAISummaryService(
+		aiSummaryRepo,
+		userRepo,
+		syncService,
+		syncDescriptionService,
+		syncFeedbackService,
+		&cfg)
 
 	router := gin.Default()
 
@@ -60,7 +70,7 @@ func main() {
 	// router.Static("/uploads/images", "./uploads/images")
 	// router.Static("/uploads/documents", "./uploads/documents")
 
-	routes.SetupRoutes(router, authService, jwtService, syncService, syncDescriptionService)
+	routes.SetupRoutes(router, authService, jwtService, syncService, syncDescriptionService, syncFeedbackService, aiSummaryService)
 
 	log.Printf("Server running on port %s", cfg.Port)
 	if err := router.Run(":" + cfg.Port); err != nil {

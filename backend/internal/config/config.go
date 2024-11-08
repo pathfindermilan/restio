@@ -21,6 +21,7 @@ type Config struct {
 	FrontendURL              string
 	DescribeImageEndpoint    string
 	DescribeDocumentEndpoint string
+	GenerateAnswerEndpoint   string
 }
 
 func LoadConfig() Config {
@@ -44,6 +45,7 @@ func LoadConfig() Config {
 		FrontendURL:              viper.GetString("FRONTEND_URL"),
 		DescribeImageEndpoint:    viper.GetString("DESCRIBE_IMAGE_ENDPOINT"),
 		DescribeDocumentEndpoint: viper.GetString("DESCRIBE_DOCUMENT_ENDPOINT"),
+		GenerateAnswerEndpoint:   viper.GetString("GENERATE_ANSWER_ENDPOINT"),
 	}
 
 	return config
