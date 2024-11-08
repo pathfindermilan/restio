@@ -36,6 +36,7 @@ func SetupRoutes(
 		protected.POST("/sync", syncController.SyncData)
 		protected.DELETE("/sync-reset", syncController.SyncReset)
 		protected.POST("/sync-feedback", syncFeebackController.SyncFeedackData)
+		protected.GET("/sync-get-content", syncController.GetAIAnswer)
 
 		protected.GET("/uploads/images/:filename", syncController.ServeImage)
 		protected.GET("/uploads/documents/:filename", syncController.ServeDocument)

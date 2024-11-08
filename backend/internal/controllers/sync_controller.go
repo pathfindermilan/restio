@@ -296,6 +296,48 @@ func (ctrl *SyncController) SyncData(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Data synced successfully"})
 }
 
+func (ctrl *SyncController) GetAIAnswer(c *gin.Context) {
+	userIDInterface, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+		return
+	}
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid User ID type"})
+		return
+	}
+
+	aiSummary, err := ctrl.aiSummaryService.GetAISummary(userID)
+	if err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "AI Summary not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve AI Summary"})
+		return
+	}
+
+	syncData, err := ctrl.syncService.GetSyncData(userID)
+	if err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Sync data not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve Sync Data"})
+		return
+	}
+
+	response := gin.H{
+		"contentType":           syncData.ContentType,
+		"ariaResponse":          aiSummary.AriaResponse,
+		"ariaResponseStatus":    aiSummary.AriaResponseStatus,
+		"allegroResponse":       aiSummary.AllegroResponse,
+		"allegroResponseStatus": aiSummary.AllegroResponseStatus,
+	}
+	c.JSON(http.StatusOK, response)
+}
+
 func (ctrl *SyncController) SyncReset(c *gin.Context) {
 	userIDInterface, exists := c.Get("userID")
 	if !exists {
